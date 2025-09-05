@@ -52,6 +52,8 @@
 
 import requests
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI()
 
@@ -76,3 +78,9 @@ async def get_playlist(playlist_id: str):
         "title": data["name"],
         "videos": data["relatedStreams"]  # contains list of videos
     }
+
+# Path to frontend folder (inside backend)
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+
+# Serve frontend files (index.html at "/")
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
