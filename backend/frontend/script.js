@@ -1,6 +1,16 @@
 async function getVideo() {
   const url = document.getElementById("url").value;
-  const res = await fetch(`/api/video?url=${encodeURIComponent(url)}`);
+  const cookies = document.getElementById("cookies").value;
+
+  const formData = new FormData();
+  formData.append("url", url);
+  if (cookies) formData.append("cookies", cookies);
+
+  const res = await fetch(`/api/video`, {
+    method: "POST",
+    body: formData
+  });
+
   const data = await res.json();
   const resultDiv = document.getElementById("result");
 
@@ -17,7 +27,17 @@ async function getVideo() {
 
 async function getPlaylist() {
   const url = document.getElementById("url").value;
-  const res = await fetch(`/api/playlist?url=${encodeURIComponent(url)}`);
+  const cookies = document.getElementById("cookies").value;
+
+  const formData = new FormData();
+  formData.append("url", url);
+  if (cookies) formData.append("cookies", cookies);
+
+  const res = await fetch(`/api/playlist`, {
+    method: "POST",
+    body: formData
+  });
+
   const data = await res.json();
   const resultDiv = document.getElementById("result");
 
