@@ -60,24 +60,45 @@ app = FastAPI()
 API_BASE = "https://pipedapi.kavin.rocks"
 
 @app.get("/api/video")
-async def get_video(video_id: str):
-    url = f"{API_BASE}/streams/{video_id}"
-    res = requests.get(url)
+async def get_video(url: str):  # match frontend param
+    # Extract video_id (last part of YouTube URL or full ID)
+    if "youtube.com" in url or "youtu.be" in url:
+        if "v=" in url:
+            video_id = url.split("v=")[1].split("&")[0]
+        else:
+            video_id = url.split("/")[-1]
+    else:
+        video_id = url  # already an ID
+
+    res = requests.get(f"{API_BASE}/streams/{video_id}")
     data = res.json()
+
+    # Return only necessary fields
     return {
-        "title": data["title"],
-        "streams": data["videoStreams"]  # contains direct mp4 links
+        "title": data.get("title"),
+        "video_url": data["videoStreams"][0]["url"] if data.get("videoStreams") else None
     }
 
+
 @app.get("/api/playlist")
-async def get_playlist(playlist_id: str):
-    url = f"{API_BASE}/playlists/{playlist_id}"
-    res = requests.get(url)
+async def get_playlist(url: str):  # match frontend param
+    # Extract playlist_id (after "list=")
+    if "list=" in url:
+        playlist_id = url.split("list=")[1].split("&")[0]
+    else:
+        playlist_id = url
+
+    res = requests.get(f"{API_BASE}/playlists/{playlist_id}")
     data = res.json()
+
     return {
-        "title": data["name"],
-        "videos": data["relatedStreams"]  # contains list of videos
+        "playlist_title": data.get("name"),
+        "videos": [
+            {"title": v["title"], "url": f"{API_BASE}/streams/{v['url'].split('v=')[1]}"}
+            for v in data.get("relatedStreams", [])
+        ]
     }
+
 
 # Path to frontend folder (inside backend)
 frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
