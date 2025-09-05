@@ -17,13 +17,22 @@ async function getVideo() {
   if (data.error) {
     resultDiv.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
   } else {
+    // Render video container
     resultDiv.innerHTML = `
       <h3>${data.title}</h3>
-      <video src="${data.video_url}" controls width="480"></video><br>
+      <video id="player" controls width="480"></video><br>
       <a href="${data.video_url}" download>Download MP4</a>
     `;
+
+    // Decide how to play
+    if (data.video_url.endsWith(".m3u8")) {
+      playVideo(data.video_url);
+    } else {
+      document.getElementById("player").src = data.video_url;
+    }
   }
 }
+
 
 async function getPlaylist() {
   const url = document.getElementById("url").value;
@@ -45,16 +54,43 @@ async function getPlaylist() {
     resultDiv.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
   } else {
     let html = `<h2>${data.playlist_title}</h2>`;
-    data.videos.forEach(v => {
+    data.videos.forEach((v, i) => {
+      const playerId = `player-${i}`;
       html += `
         <div>
           <p>${v.title}</p>
-          <video src="${v.url}" controls width="320"></video><br>
+          <video id="${playerId}" controls width="320"></video><br>
           <a href="${v.url}" download>Download MP4</a>
         </div>
         <hr>
       `;
     });
     resultDiv.innerHTML = html;
+
+    // Init players
+    data.videos.forEach((v, i) => {
+      const videoEl = document.getElementById(`player-${i}`);
+      if (v.url.endsWith(".m3u8")) {
+        const hls = new Hls();
+        hls.loadSource(v.url);
+        hls.attachMedia(videoEl);
+      } else {
+        videoEl.src = v.url;
+      }
+    });
+  }
+}
+
+
+
+function playVideo(url) {
+  const video = document.getElementById("player");
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    // Safari
+    video.src = url;
   }
 }

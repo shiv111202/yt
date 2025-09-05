@@ -96,11 +96,12 @@ def clean_cookie_text(cookie_text: str) -> str:
 
 def run_yt_dlp(url: str, playlist: bool, cookies: str = None):
     ydl_opts = {
-        "format": "best[ext=mp4]/best",
+        # Prefer progressive MP4 first, fallback to bestvideo+audio MP4
+        "format": "(bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4])/best",
         "noplaylist": not playlist,
         "quiet": True,
+        "merge_output_format": "mp4",  # ensure final container is mp4
     }
-
     tmp_file = None
     if cookies:
         tmp_file = tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".txt")
