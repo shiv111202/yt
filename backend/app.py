@@ -44,4 +44,7 @@ async def get_playlist(url: str):
 
 # ---------------- Frontend ----------------
 # Serve static frontend
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+# app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+# Serve frontend from inside backend/frontend
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
