@@ -60,24 +60,37 @@ app = FastAPI()
 API_BASE = "https://pipedapi.kavin.rocks"
 
 @app.get("/api/video")
-async def get_video(url: str):  # match frontend param
-    # Extract video_id (last part of YouTube URL or full ID)
+async def get_video(url: str):
+    # Extract video_id safely
+    video_id = None
     if "youtube.com" in url or "youtu.be" in url:
         if "v=" in url:
             video_id = url.split("v=")[1].split("&")[0]
         else:
-            video_id = url.split("/")[-1]
+            video_id = url.split("/")[-1].split("?")[0]
     else:
-        video_id = url  # already an ID
+        video_id = url
 
-    res = requests.get(f"{API_BASE}/streams/{video_id}")
-    data = res.json()
+    try:
+        res = requests.get(f"{API_BASE}/streams/{video_id}", timeout=10)
+        if res.status_code != 200:
+            return {"error": f"Piped API failed with {res.status_code}"}
 
-    # Return only necessary fields
-    return {
-        "title": data.get("title"),
-        "video_url": data["videoStreams"][0]["url"] if data.get("videoStreams") else None
-    }
+        try:
+            data = res.json()
+        except Exception:
+            return {"error": "Invalid JSON from Piped API", "raw": res.text[:200]}
+
+        if not data.get("videoStreams"):
+            return {"error": "No video streams found"}
+
+        return {
+            "title": data.get("title", "Unknown"),
+            "video_url": data["videoStreams"][0]["url"]
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/api/playlist")
